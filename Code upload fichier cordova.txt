@@ -1,0 +1,51 @@
+
+
+---------------------code serveur-------------------
+
+app.get("/listepieces", (req, res) => {
+    
+    const sql = "SELECT * FROM pieces ";
+    pool.query(sql, (err, result) => {
+        if (err) {
+            return console.error(err.message);
+          }
+      res.send(result.rows);
+    });
+  });
+
+
+
+-------------------code client ---------------------------
+
+
+ // get  list of pieces
+
+ function getDocumentsValidTrue(){
+
+    respons=[];
+
+    $.ajax('http://10.0.2.2:1000/listepieces', 
+    {
+        dataType: 'json', // type of response data
+        timeout: 500,     // timeout milliseconds
+        success: function (data,status,xhr) {   // success callback function
+            console.log("donne",data)
+
+            if(data.length>0){
+                data.forEach(element => {
+                    respons.push(element)
+                });
+            }
+           
+            
+        },
+        error: function (jqXhr, textStatus, errorMessage) { // error callback 
+            console.log('Error: ' + errorMessage);
+        }
+    });
+
+
+    return respons;
+
+
+ }
