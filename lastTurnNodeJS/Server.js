@@ -2,8 +2,10 @@ const express = require("express");
 const fs = require('fs');
 const app = express();
 const bodyParser = require("body-parser");
+var uuid = require('uuid-random');
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static('public'));
 app.use((req, res, next) => 
 {
   res.header('Access-Control-Allow-Origin', '*');
@@ -52,16 +54,17 @@ var storage = multer.diskStorage(
 });
 var upload = multer({ storage: storage })
 
-// POST ajout d'une image
+// POST upload d'une image
 app.post("/addDocument",upload.single('image'),(req,res)=>
 {
 try
 {
   date=new Date();
-  titre=req.body.titre;
+  titre=uuid();
+  id_piece=req.query.id_piece;
   w1g_file_path_ftp="/images/"+titre;
-  const sql = "INSERT INTO documents (date, titre,w1g_file_path_ftp ) VALUES ($1, $2, $3)";
-  const document = [date, titre, w1g_file_path_ftp];
+  const sql = "INSERT INTO documents (date, titre,w1g_file_path_ftp,id_piece ) VALUES ($1, $2, $3,$4)";
+  const document = [date, titre, w1g_file_path_ftp, id_piece];
   pool.query(sql, document, (err, result) => 
   {
     if (err) 
@@ -111,10 +114,32 @@ app.get("/allDocuments", (req, res) => {
       if (err) {
         return console.error(err.message);
       }
-      console.log("resultat",result)
+      //console.log("resultat",result)
      res.send(result.rows);
     });
 });
+
+// GET récupération de toutes les images
+app.get("/allDocumentsbypiece/:idpiece", (req, res) => {
+  const idpiece = req.params.idpiece;
+  console.log(idpiece);
+  const sql = "SELECT * FROM documents where id_piece = $1";
+  pool.query(sql, [idpiece], (err, result) => {
+    if (err) {
+      return console.error(err.message);
+    }
+    console.error('COUCOU : ');
+    console.error(result.rows);
+   res.send(result.rows);
+  });
+});
+
+
+
+
+
+
+
 
 // GET récupération d'une image
 app.get("/oneDocument/:id", (req, res) => {
@@ -124,15 +149,16 @@ app.get("/oneDocument/:id", (req, res) => {
         if (err) {
             return console.error(err.message);
           }
-      res.send(result.rows);
+
+          res.send(result.rows);
     });
   });
 
 // POST mise à jour d'une image
   app.post("/updateDocument/:id", (req, res) => {
     const id = req.params.id;
-    console.log("id",req.params.id)
-    console.log("body",req.body);
+    // console.log("id",req.params.id)
+    // console.log("body",req.body);
     const document = [req.body.date, req.body.titre, req.body.w1g_file_path_ftp, id];
     const sql = "UPDATE documents SET date = $1, titre = $2, w1g_file_path_ftp = $3 WHERE (id = $4)";
     pool.query(sql, document, (err, result) => {
